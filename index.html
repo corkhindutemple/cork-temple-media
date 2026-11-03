@@ -110,10 +110,10 @@
         }
       ];
 
-      // Populate immediately so dropdowns are never empty
+      // Populate dropdowns immediately
       populateYears();
 
-      // Attempt live Drive sync via GET
+      // Fetch live Drive updates via GET
       async function syncLiveFolders() {
         try {
           const response = await fetch(SCRIPT_URL + "?action=getFolders");
@@ -234,46 +234,4 @@
         let errors = [];
 
         for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          status.style.color = "#000";
-          status.textContent = `Uploading ${i + 1} of ${files.length} (${file.name})...`;
-
-          try {
-            const base64Data = await fileToBase64(file);
-            const payload = {
-              fileName: file.name,
-              mimeType: file.type || "application/octet-stream",
-              base64: base64Data,
-              folderId: folderId,
-              devoteeName: devoteeName,
-              devoteeEmail: devoteeEmail,
-              devoteePhone: phoneVal
-            };
-
-            const response = await uploadSingleFile(payload);
-            if (response === "Success") {
-              successCount++;
-            } else {
-              errors.push(`${file.name}: ${response}`);
-            }
-          } catch (err) {
-            errors.push(`${file.name}: ${err.message || "Failed"}`);
-          }
-        }
-
-        if (successCount === files.length) {
-          status.style.color = "green";
-          status.textContent = `Success! All ${successCount} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
-          form.reset();
-          document.getElementById('festivalSelect').disabled = true;
-          populateYears();
-        } else {
-          status.style.color = "red";
-          status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
-        }
-
-        btn.disabled = false;
-      }
-    </script>
-  </body>
-</html>
+          const file = files
