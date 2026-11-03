@@ -48,13 +48,8 @@
         >
 
         <label for="yearSelect">Select Year:*</label>
-        <!-- The options are hardcoded directly into the HTML so they appear immediately -->
         <select id="yearSelect" name="yearSelect" onchange="onYearChange()" required>
-          <option value="">-- Select Year --</option>
-          <option value="2026">2026</option>
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
+          <option value="">-- Loading Folders from Drive... --</option>
         </select>
 
         <label for="festivalSelect">Select Festival / Category:*</label>
@@ -74,50 +69,64 @@
     <script>
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
       const UPLOAD_TOKEN = "CorkTempleSecureToken2026";
-      const ROOT_FOLDER_ID = "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3";
 
-      // Festival lists keyed directly by year string
-      const festivalData = {
-        "2026": [
-          { name: "Maha Shivaratri 2026", id: ROOT_FOLDER_ID },
-          { name: "Holi 2026", id: ROOT_FOLDER_ID },
-          { name: "Ugadi / Gudi Padwa 2026", id: ROOT_FOLDER_ID },
-          { name: "General / Regular Darshan", id: ROOT_FOLDER_ID },
-          { name: "Others", id: ROOT_FOLDER_ID }
-        ],
-        "2025": [
-          { name: "Diwali 2025", id: ROOT_FOLDER_ID },
-          { name: "Navratri 2025", id: ROOT_FOLDER_ID },
-          { name: "Ganesh Chaturthi 2025", id: ROOT_FOLDER_ID },
-          { name: "General 2025", id: ROOT_FOLDER_ID },
-          { name: "Others", id: ROOT_FOLDER_ID }
-        ],
-        "2024": [
-          { name: "Diwali 2024", id: ROOT_FOLDER_ID },
-          { name: "Navratri 2024", id: ROOT_FOLDER_ID },
-          { name: "General 2024", id: ROOT_FOLDER_ID },
-          { name: "Others", id: ROOT_FOLDER_ID }
-        ],
-        "2023": [
-          { name: "Diwali 2023", id: ROOT_FOLDER_ID },
-          { name: "General 2023", id: ROOT_FOLDER_ID },
-          { name: "Others", id: ROOT_FOLDER_ID }
-        ]
+      let folderTree = [];
+
+      // JSONP Callback - runs automatically when live Google Drive data arrives
+      window.handleFolderData = function(response) {
+        if (response && response.status === "success" && response.data && response.data.length > 0) {
+          folderTree = response.data;
+          populateYears();
+        } else {
+          document.getElementById('yearSelect').innerHTML = '<option value="">-- No folders found in Drive --</option>';
+        }
       };
 
+      // Injects a script tag to bypass CORS restrictions completely
+      function fetchLiveFoldersJSONP() {
+        const script = document.createElement('script');
+        script.src = SCRIPT_URL + "?action=getFolders&callback=handleFolderData";
+        script.onerror = function() {
+          document.getElementById('yearSelect').innerHTML = '<option value="">-- Error connecting to Drive --</option>';
+        };
+        document.body.appendChild(script);
+      }
+
+      fetchLiveFoldersJSONP();
+
+      function populateYears() {
+        const yearSelect = document.getElementById('yearSelect');
+        yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+
+        folderTree.forEach((yearObj, index) => {
+          const opt = document.createElement('option');
+          opt.value = index;
+          opt.textContent = yearObj.name;
+          yearSelect.appendChild(opt);
+        });
+      }
+
       function onYearChange() {
-        const year = document.getElementById('yearSelect').value;
+        const yearIndex = document.getElementById('yearSelect').value;
         const festivalSelect = document.getElementById('festivalSelect');
 
         festivalSelect.innerHTML = '<option value="">-- Select Festival / Category --</option>';
 
-        if (year && festivalData[year]) {
-          festivalData[year].forEach(fest => {
-            const opt = document.createElement('option');
-            opt.value = fest.id;
-            opt.textContent = fest.name;
-            festivalSelect.appendChild(opt);
-          });
+        if (yearIndex !== "") {
+          const festivals = folderTree[yearIndex].festivals;
+          if (festivals && festivals.length > 0) {
+            festivals.forEach(fest => {
+              const opt = document.createElement('option');
+              opt.value = fest.id;
+              opt.textContent = fest.name;
+              festivalSelect.appendChild(opt);
+            });
+          } else {
+            const yearOpt = document.createElement('option');
+            yearOpt.value = folderTree[yearIndex].id;
+            yearOpt.textContent = "General Year Upload (" + folderTree[yearIndex].name + ")";
+            festivalSelect.appendChild(yearOpt);
+          }
           festivalSelect.disabled = false;
         } else {
           festivalSelect.disabled = true;
@@ -217,6 +226,7 @@
           status.textContent = `Success! All ${successCount} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
           form.reset();
           document.getElementById('festivalSelect').disabled = true;
+          populateYears();
         } else {
           status.style.color = "red";
           status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
