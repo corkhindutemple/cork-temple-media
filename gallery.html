@@ -33,7 +33,7 @@
     <div class="container">
       <div class="nav-links">
         <a href="index.html">Upload Media</a>
-        <a href="gallery.html" class="active">View Gallery</a>
+        <a href="javascript:void(0)" class="active">View Gallery</a>
       </div>
 
       <h2>Cork Temple</h2>
@@ -53,15 +53,24 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 13]
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
+      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 7]
       let allMedia = [];
 
       async function loadGallery() {
         const status = document.getElementById("statusMessage");
         try {
-          const response = await fetch(SCRIPT_URL + "?action=getGallery");
+          const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({
+              token: UPLOAD_TOKEN,
+              action: "getGallery"
+            })
+          });
+
           const result = await response.json();
-          if (result.status === "success" && result.data) {
+          if (result.status === "success" && Array.isArray(result.data)) {
             allMedia = result.data;
             if (allMedia.length === 0) {
               status.textContent = "No approved photos or videos yet.";
@@ -71,11 +80,11 @@
               renderMedia(allMedia);
             }
           } else {
-            status.textContent = "Unable to load gallery media.";
+            status.textContent = "No approved items found.";
           }
         } catch (err) {
           console.error("Gallery fetch error:", err);
-          status.textContent = "Error connecting to gallery. Please try again later.";
+          status.textContent = "Error loading gallery. Please check connection.";
         }
       }
 
@@ -89,6 +98,7 @@
         });
 
         const yearSelect = document.getElementById("yearFilter");
+        yearSelect.innerHTML = '<option value="ALL">All Years</option>';
         Array.from(yearSet).sort().reverse().forEach(y => {
           const opt = document.createElement("option");
           opt.value = y;
@@ -97,6 +107,7 @@
         });
 
         const festSelect = document.getElementById("festivalFilter");
+        festSelect.innerHTML = '<option value="ALL">All Festivals / Events</option>';
         Array.from(festSet).sort().forEach(f => {
           const opt = document.createElement("option");
           opt.value = f;
