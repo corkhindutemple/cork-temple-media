@@ -22,8 +22,8 @@
   <body>
     <div class="container">
       <div class="nav-links">
-        <a href="javascript:void(0)" class="active">Upload Media</a>
-        <a href="gallery.html?v=3">View Gallery</a>
+        <a href="index.html" class="active">Upload Media</a>
+        <a href="gallery.html">View Gallery</a>
       </div>
 
       <h2>Cork Temple</h2>
@@ -48,7 +48,7 @@
         >
 
         <label for="yearSelect">Select Year:*</label>
-        <select id="yearSelect" name="yearSelect" onchange="onYearChange()" required>
+        <select id="yearSelect" name="yearSelect" required>
           <option value="">-- Select Year --</option>
           <option value="2026">2026</option>
           <option value="2025">2025</option>
@@ -71,11 +71,11 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
-      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 7]
-      const ROOT_FOLDER_ID = "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3";
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 14]
+      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 14]
+      const ROOT_FOLDER_ID = "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3";[cite: 14]
 
-      const festivalData = {
+      let folderMap = {
         "2026": [
           { name: "Maha Shivaratri 2026", id: ROOT_FOLDER_ID },
           { name: "Holi 2026", id: ROOT_FOLDER_ID },
@@ -103,24 +103,59 @@
         ]
       };
 
-      function onYearChange() {
-        const year = document.getElementById('yearSelect').value;
-        const festivalSelect = document.getElementById('festivalSelect');
+      const yearEl = document.getElementById('yearSelect');
+      const festEl = document.getElementById('festivalSelect');
 
-        festivalSelect.innerHTML = '<option value="">-- Select Festival / Category --</option>';
+      function updateFestivals() {
+        const val = yearEl.value;
+        festEl.innerHTML = '<option value="">-- Select Festival / Category --</option>';
 
-        if (year && festivalData[year]) {
-          festivalData[year].forEach(fest => {
+        if (val && folderMap[val]) {
+          folderMap[val].forEach(f => {
             const opt = document.createElement('option');
-            opt.value = fest.id;
-            opt.textContent = fest.name;
-            festivalSelect.appendChild(opt);
+            opt.value = f.id;
+            opt.textContent = f.name;
+            festEl.appendChild(opt);
           });
-          festivalSelect.disabled = false;
+          festEl.disabled = false;
         } else {
-          festivalSelect.disabled = true;
+          festEl.disabled = true;
+          festEl.innerHTML = '<option value="">-- Select Year First --</option>';
         }
       }
+
+      yearEl.addEventListener('change', updateFestivals);
+      yearEl.addEventListener('input', updateFestivals);
+
+      // JSONP background sync: fetches exact Drive IDs and new subfolders silently
+      window.handleDriveFolders = function(res) {
+        if (res && res.status === "success" && Array.isArray(res.data)) {
+          const dynamicMap = {};
+          res.data.forEach(y => {
+            dynamicMap[y.name] = y.festivals && y.festivals.length > 0
+              ? y.festivals
+              : [{ name: "General " + y.name, id: y.id }];
+          });
+          folderMap = dynamicMap;
+
+          const currentYear = yearEl.value;
+          yearEl.innerHTML = '<option value="">-- Select Year --</option>';
+          Object.keys(folderMap).sort().reverse().forEach(yr => {
+            const opt = document.createElement('option');
+            opt.value = yr;
+            opt.textContent = yr;
+            yearEl.appendChild(opt);
+          });
+          if (currentYear) {
+            yearEl.value = currentYear;
+            updateFestivals();
+          }
+        }
+      };
+
+      const jsonp = document.createElement('script');
+      jsonp.src = SCRIPT_URL + "?action=getFolders&callback=handleDriveFolders";
+      document.body.appendChild(jsonp);
 
       function fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -145,7 +180,7 @@
       async function submitData() {
         const form = document.getElementById('uploadForm');
         if (!form.checkValidity()) {
-          alert("Please fill out all required fields with a valid email and phone number (e.g., 087 123 4567).");
+          alert("Please fill out all required fields with a valid email and phone number.");
           return;
         }
 
@@ -166,7 +201,7 @@
         const MAX_FILE_SIZE = 25 * 1024 * 1024;
         for (let i = 0; i < files.length; i++) {
           if (files[i].size > MAX_FILE_SIZE) {
-            alert(`File "${files[i].name}" exceeds the 25 MB limit. Please choose a smaller file.`);
+            alert(`File "${files[i].name}" exceeds the 25 MB limit.`);
             return;
           }
         }
@@ -177,7 +212,7 @@
 
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
-        const folderId = document.getElementById('festivalSelect').value;
+        const folderId = festEl.value;
 
         let successCount = 0;
         let errors = [];
@@ -214,7 +249,8 @@
           status.style.color = "green";
           status.textContent = `Success! All ${successCount} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
           form.reset();
-          document.getElementById('festivalSelect').disabled = true;
+          festEl.disabled = true;
+          festEl.innerHTML = '<option value="">-- Select Year First --</option>';
         } else {
           status.style.color = "red";
           status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
