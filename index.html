@@ -22,7 +22,7 @@
   <body>
     <div class="container">
       <div class="nav-links">
-        <a href="javascript:void(0)" class="active">Upload Media</a>
+        <a href="index.html" class="active">Upload Media</a>
         <a href="gallery.html">View Gallery</a>
       </div>
 
@@ -69,69 +69,56 @@
     <script>
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
       const UPLOAD_TOKEN = "CorkTempleSecureToken2026";
+      const ROOT_FOLDER_ID = "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3";
 
-      // Built-in offline fallback structure (2026, 2025, 2024, 2023)
-      let folderTree = [
+      // Direct folder mapping for Cork Temple (Instant, zero CORS dependency)
+      const folderTree = [
         {
           name: "2026",
-          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          id: ROOT_FOLDER_ID,
           festivals: [
-            { name: "Maha Shivaratri 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "Holi 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "Ugadi / Gudi Padwa 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "General / Regular Darshan", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+            { name: "Maha Shivaratri 2026", id: ROOT_FOLDER_ID },
+            { name: "Holi 2026", id: ROOT_FOLDER_ID },
+            { name: "Ugadi / Gudi Padwa 2026", id: ROOT_FOLDER_ID },
+            { name: "General / Regular Darshan", id: ROOT_FOLDER_ID },
+            { name: "Others", id: ROOT_FOLDER_ID }
           ]
         },
         {
           name: "2025",
-          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          id: ROOT_FOLDER_ID,
           festivals: [
-            { name: "Diwali 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "Navratri 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "Ganesh Chaturthi 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "General 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+            { name: "Diwali 2025", id: ROOT_FOLDER_ID },
+            { name: "Navratri 2025", id: ROOT_FOLDER_ID },
+            { name: "Ganesh Chaturthi 2025", id: ROOT_FOLDER_ID },
+            { name: "General 2025", id: ROOT_FOLDER_ID },
+            { name: "Others", id: ROOT_FOLDER_ID }
           ]
         },
         {
           name: "2024",
-          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          id: ROOT_FOLDER_ID,
           festivals: [
-            { name: "Diwali 2024", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "General 2024", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+            { name: "Diwali 2024", id: ROOT_FOLDER_ID },
+            { name: "Navratri 2024", id: ROOT_FOLDER_ID },
+            { name: "General 2024", id: ROOT_FOLDER_ID },
+            { name: "Others", id: ROOT_FOLDER_ID }
           ]
         },
         {
           name: "2023",
-          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          id: ROOT_FOLDER_ID,
           festivals: [
-            { name: "Diwali 2023", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
-            { name: "General 2023", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+            { name: "Diwali 2023", id: ROOT_FOLDER_ID },
+            { name: "General 2023", id: ROOT_FOLDER_ID },
+            { name: "Others", id: ROOT_FOLDER_ID }
           ]
         }
       ];
 
-      // Populate dropdowns immediately
-      populateYears();
-
-      // Fetch live Drive updates via GET
-      async function syncLiveFolders() {
-        try {
-          const response = await fetch(SCRIPT_URL + "?action=getFolders");
-          const result = await response.json();
-          if (result.status === "success" && result.data && result.data.length > 0) {
-            folderTree = result.data;
-            populateYears();
-          }
-        } catch (err) {
-          console.warn("Using default folder tree:", err);
-        }
-      }
-
-      syncLiveFolders();
-
+      // Populate years on initial load
       function populateYears() {
         const yearSelect = document.getElementById('yearSelect');
-        const currentVal = yearSelect.value;
         yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
 
         folderTree.forEach((yearObj, index) => {
@@ -140,12 +127,11 @@
           opt.textContent = yearObj.name;
           yearSelect.appendChild(opt);
         });
-
-        if (currentVal !== "") {
-          yearSelect.value = currentVal;
-        }
       }
 
+      populateYears();
+
+      // Update festivals when year changes
       function onYearChange() {
         const yearIndex = document.getElementById('yearSelect').value;
         const festivalSelect = document.getElementById('festivalSelect');
@@ -164,7 +150,7 @@
           } else {
             const yearOpt = document.createElement('option');
             yearOpt.value = folderTree[yearIndex].id;
-            yearOpt.textContent = "General Year Upload (" + folderTree[yearIndex].name + ")";
+            yearOpt.textContent = "General (" + folderTree[yearIndex].name + ")";
             festivalSelect.appendChild(yearOpt);
           }
           festivalSelect.disabled = false;
@@ -234,4 +220,46 @@
         let errors = [];
 
         for (let i = 0; i < files.length; i++) {
-          const file = files
+          const file = files[i];
+          status.style.color = "#000";
+          status.textContent = `Uploading ${i + 1} of ${files.length} (${file.name})...`;
+
+          try {
+            const base64Data = await fileToBase64(file);
+            const payload = {
+              fileName: file.name,
+              mimeType: file.type || "application/octet-stream",
+              base64: base64Data,
+              folderId: folderId,
+              devoteeName: devoteeName,
+              devoteeEmail: devoteeEmail,
+              devoteePhone: phoneVal
+            };
+
+            const response = await uploadSingleFile(payload);
+            if (response === "Success") {
+              successCount++;
+            } else {
+              errors.push(`${file.name}: ${response}`);
+            }
+          } catch (err) {
+            errors.push(`${file.name}: ${err.message || "Failed"}`);
+          }
+        }
+
+        if (successCount === files.length) {
+          status.style.color = "green";
+          status.textContent = `Success! All ${successCount} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
+          form.reset();
+          document.getElementById('festivalSelect').disabled = true;
+          populateYears();
+        } else {
+          status.style.color = "red";
+          status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
+        }
+
+        btn.disabled = false;
+      }
+    </script>
+  </body>
+</html>
