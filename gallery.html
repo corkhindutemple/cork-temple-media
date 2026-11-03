@@ -53,7 +53,7 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
       let allMedia = [];
 
       window.handleGalleryData = function(result) {
@@ -100,74 +100,4 @@
         });
 
         const festSelect = document.getElementById("festivalFilter");
-        festSelect.innerHTML = '<option value="ALL">All Festivals / Events</option>';
-        Array.from(festSet).sort().forEach(f => {
-          const opt = document.createElement("option");
-          opt.value = f;
-          opt.textContent = f;
-          festSelect.appendChild(opt);
-        });
-      }
-
-      function applyFilters() {
-        const year = document.getElementById("yearFilter").value;
-        const fest = document.getElementById("festivalFilter").value;
-
-        const filtered = allMedia.filter(item => {
-          const matchYear = (year === "ALL" || item.year === year);
-          const matchFest = (fest === "ALL" || item.festival === fest);
-          return matchYear && matchFest;
-        });
-
-        renderMedia(filtered);
-      }
-
-      function renderMedia(items) {
-        const grid = document.getElementById("galleryGrid");
-        const status = document.getElementById("statusMessage");
-        grid.innerHTML = "";
-
-        if (items.length === 0) {
-          status.style.display = "block";
-          status.textContent = "No media found matching the selected filter.";
-          return;
-        }
-
-        status.style.display = "none";
-
-        items.forEach(item => {
-          const card = document.createElement("div");
-          card.className = "media-card";
-
-          let mediaPreview = "";
-          if (item.isVideo) {
-            mediaPreview = `
-              <div class="media-thumb-box">
-                <video src="${item.fullUrl}" preload="metadata" muted playsinline></video>
-                <span style="position:absolute; background:rgba(0,0,0,0.7); color:#fff; padding:3px 8px; border-radius:4px; font-size:11px;">▶ Video</span>
-              </div>
-            `;
-          } else {
-            mediaPreview = `
-              <div class="media-thumb-box">
-                <img src="${item.thumbnailUrl}" alt="${item.fileName}" loading="lazy" onerror="this.src='${item.fullUrl}'">
-              </div>
-            `;
-          }
-
-          card.innerHTML = `
-            ${mediaPreview}
-            <div class="media-info">
-              <span class="tag">${item.festival || 'Temple'} (${item.year})</span>
-              <div class="title" title="${item.fileName}">${item.fileName}</div>
-              <a href="${item.fullUrl}" target="_blank" class="view-btn">View Original File</a>
-            </div>
-          `;
-          grid.appendChild(card);
-        });
-      }
-
-      fetchGallery();
-    </script>
-  </body>
-</html>
+        festSelect.innerHTML = '<option value="ALL">All Festivals / Events</
