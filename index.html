@@ -49,7 +49,7 @@
 
         <label for="yearSelect">Select Year:*</label>
         <select id="yearSelect" name="yearSelect" onchange="onYearChange(this.value)" required>
-          <option value="">-- Connecting to Google Drive... --</option>
+          <option value="">-- Select Year --</option>
         </select>
 
         <label for="festivalSelect">Select Festival / Category:*</label>
@@ -67,43 +67,76 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 1]
-      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 1]
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
+      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";
 
-      let liveFolderTree = [];
-
-      // JSONP Callback: receives the real Drive folders directly from your Apps Script getFolderStructure()
-      window.handleLiveFolders = function(response) {
-        if (response && response.status === "success" && Array.isArray(response.data) && response.data.length > 0) {
-          liveFolderTree = response.data;
-          populateYearDropdown();
-        } else {
-          document.getElementById('yearSelect').innerHTML = '<option value="">-- No Folders Found in Drive --</option>';
+      // Live Google Drive folder map from Cork Temple Drive
+      const folderTree = [
+        {
+          id: "14Y-w0CEhy9Hw0En0uEcBDR5ZcNxTqL51",
+          name: "2026",
+          festivals: [
+            { id: "1vj83OV_pQ8Tb7tWLEVNZ8l_wThU4Fe7A", name: "Diwali" },
+            { id: "18eI9OVq2IxpJrmTdx7J1EPeXVD0UjpeX", name: "Ganesha Chaturthi" },
+            { id: "1lMRe98o5_Lp5acetWAVKYtRMTss6T9ig", name: "Hanuman Jayanti" },
+            { id: "1wh-NbRELuZ-LQpGLoQ9tg8kvNPXEw50_", name: "Krishna Janmashtami" },
+            { id: "1gVx-EQrkrB1tUdRHoej0IWQ3yAgZ5hts", name: "Maha Shivarathri" },
+            { id: "1EPRkEwJXnJpF_1FxtYZIRO07TxfCjCTS", name: "Navarathri" },
+            { id: "1rkKCT7kRcXU_P15ae2C-P50fR7cc_tLx", name: "Rama Navami" },
+            { id: "1_xybBz1drPJPE5Af7X3K3giSnFYDQv5r", name: "Others" }
+          ]
+        },
+        {
+          id: "15zlfSAPrWNY9nHr9xbHZVaRkZmoSIR60",
+          name: "2025",
+          festivals: [
+            { id: "1GU22pmAfDNfxzp_iN1avzXJ89wcoS04R", name: "Diwali" },
+            { id: "1McARoA8lPsPHlSDW8Bf6cz-vhRBTWKCA", name: "Ganesha Chathurti" },
+            { id: "13gG_4pMXWIP5IC1HHqSPTsi0-kf3t_vz", name: "Hanuman Jayanti" },
+            { id: "1TlqNyjHk9JOhewWzioKdsvs0hE5IBvjY", name: "Krishna Janmashtami" },
+            { id: "1nD7XRnDL6yagSY2wr9WuUpTV0WaDe_o1", name: "Navarathri" },
+            { id: "1cbQ6oxBvThs3IcR4CkBz_MnacQUYFjAu", name: "Ramanavami" },
+            { id: "1MkFwrLkexsDurF99tPqv2NHVYx-rbHzv", name: "others" }
+          ]
+        },
+        {
+          id: "124Lfboz1-ImrTofHuTBlqoDIgK1F3DMF",
+          name: "2024",
+          festivals: [
+            { id: "1-w_SK81eMfKyL1pa_qkYEkIbtrzdIxCZ", name: "Diwali" },
+            { id: "1IfXskr96qhTpFn74VlKOt49ERIbtX32u", name: "Ganesha Chathurti" },
+            { id: "1SXMVvSyM0G8jZwaDD5tWhVxj-vF4kJzg", name: "Hanuman Jayanti" },
+            { id: "1nRkcClRFAyZBrtuVNK1XzU0-CYvBS_KA", name: "Krishna Janmashtami" },
+            { id: "1qYr1jLM9gGrHvWrZFoDgRLY3CuzJ7D1h", name: "Navarathri" },
+            { id: "15jPtPFPOXdXc4dsc6Xcg0vdOQLgPFmfm", name: "Rama Navami" },
+            { id: "1b_RG3nT7vtv9LCkl7-S6a5JpZbwMoc46", name: "others" }
+          ]
+        },
+        {
+          id: "1j6UX_DWXbjf9AF9tJKIDWABsD9X5IUKa",
+          name: "2023",
+          festivals: [
+            { id: "18lfkuBJdiOgFYSjDCEleJ99ekhzFRTXz", name: "Diwali" },
+            { id: "1sk2T9_jIwvMchDN_XwSldPHG9ra4cfxF", name: "Ganesha Chathurthi" },
+            { id: "1GT6c1Tv98SD_OooT_SvMUi-tYSZ9qXrz", name: "Hanuman Jayanti" },
+            { id: "1hoYUvgopnu2VKM6kAZa9ZMJ9ggBLBYtu", name: "Krishna Janmashtami" },
+            { id: "1B24qkeTMdBqTl1Gz-3q3o5cG0ihKQ5Ny", name: "Navarathri" },
+            { id: "1fQPyR7mZrR-0p6TmjpkpdfMNmq2uGcyu", name: "others" }
+          ]
         }
-      };
+      ];
 
-      function fetchDriveFolders() {
-        const script = document.createElement('script');
-        script.src = SCRIPT_URL + "?action=getFolders&callback=handleLiveFolders";
-        script.onerror = function() {
-          document.getElementById('yearSelect').innerHTML = '<option value="">-- Error Connecting to Drive --</option>';
-        };
-        document.body.appendChild(script);
-      }
-
-      function populateYearDropdown() {
+      function initYears() {
         const yearSelect = document.getElementById('yearSelect');
         yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
-        
-        for (let i = 0; i < liveFolderTree.length; i++) {
+        for (let i = 0; i < folderTree.length; i++) {
           const opt = document.createElement('option');
-          opt.value = i; // Store array index
-          opt.textContent = liveFolderTree[i].name; // Real folder name from Drive (e.g. 2026)
+          opt.value = i;
+          opt.textContent = folderTree[i].name;
           yearSelect.appendChild(opt);
         }
       }
 
-      // When a user selects a Year, load that year's actual subfolders from your Drive
       function onYearChange(selectedIndex) {
         const festSelect = document.getElementById('festivalSelect');
         festSelect.innerHTML = '';
@@ -122,27 +155,25 @@
         promptOpt.textContent = "-- Select Festival / Category --";
         festSelect.appendChild(promptOpt);
 
-        const yearObj = liveFolderTree[selectedIndex];
-        if (yearObj && yearObj.festivals && yearObj.festivals.length > 0) {
-          for (let j = 0; j < yearObj.festivals.length; j++) {
+        const festivals = folderTree[selectedIndex].festivals;
+        if (festivals && festivals.length > 0) {
+          for (let j = 0; j < festivals.length; j++) {
             const opt = document.createElement('option');
-            opt.value = yearObj.festivals[j].id; // Exact subfolder ID from Drive
-            opt.textContent = yearObj.festivals[j].name; // Exact subfolder name from Drive
+            opt.value = festivals[j].id; // Exact Drive folder ID
+            opt.textContent = festivals[j].name; // Exact Drive folder name
             festSelect.appendChild(opt);
           }
-        } else if (yearObj) {
-          // If the year folder has no subfolders, allow uploading directly to the year folder
+        } else {
           const opt = document.createElement('option');
-          opt.value = yearObj.id;
-          opt.textContent = "General (" + yearObj.name + ")";
+          opt.value = folderTree[selectedIndex].id;
+          opt.textContent = "General " + folderTree[selectedIndex].name;
           festSelect.appendChild(opt);
         }
 
         festSelect.disabled = false;
       }
 
-      // Run live Drive sync on load
-      fetchDriveFolders();
+      initYears();
 
       function fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -206,7 +237,6 @@
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
         const folderId = festSelect.value;
-        const selectedFestivalName = festSelect.options[festSelect.selectedIndex].text;
 
         let successCount = 0;
         let errors = [];
@@ -223,7 +253,6 @@
               mimeType: file.type || "application/octet-stream",
               base64: base64Data,
               folderId: folderId,
-              festivalName: selectedFestivalName,
               devoteeName: devoteeName,
               devoteeEmail: devoteeEmail,
               devoteePhone: phoneVal
@@ -246,7 +275,7 @@
           form.reset();
           festSelect.disabled = true;
           festSelect.innerHTML = '<option value="">-- Select Year First --</option>';
-          populateYearDropdown();
+          initYears();
         } else {
           status.style.color = "red";
           status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
