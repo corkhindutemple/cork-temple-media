@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cork Temple - Media Upload Portal</title>
+    <style>
+      body { font-family: Arial, sans-serif; margin: 20px auto; max-width: 520px; background-color: #f7f7f7; padding: 10px; }
+      .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
+      .nav-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; font-size: 14px; }
+      .nav-links a { color: #8b0000; text-decoration: none; font-weight: bold; padding: 6px 14px; border-radius: 4px; border: 1px solid #8b0000; }
+      .nav-links a.active { background-color: #8b0000; color: white; }
+      h2 { color: #8b0000; text-align: center; margin-bottom: 5px; }
+      p.subtitle { text-align: center; color: #555; font-size: 14px; margin-bottom: 20px; }
+      label { font-weight: bold; display: block; margin-top: 15px; font-size: 14px; color: #333; }
+      input, select { width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #ccc; border-radius: 4px; box-sizing: border-box; }
+      button { margin-top: 25px; width: 100%; padding: 12px; background-color: #8b0000; color: white; border: none; border-radius: 4px; font-size: 16px; cursor: pointer; font-weight: bold; }
+      button:disabled { background-color: #cccccc; cursor: not-allowed; }
+      #status { margin-top: 15px; text-align: center; font-weight: bold; font-size: 14px; line-height: 1.4; }
+      .file-hint { font-size: 12px; color: #666; margin-top: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="nav-links">
+        <a href="javascript:void(0)" class="active">Upload Media</a>
+        <a href="https://script.google.com/macros/s/AKfycbycngzqSD2AIvaCDqbEKHFi5nRLs7WcFGOJHIqDMdHMON9eiINvP7M7M15pdY0NGymI/exec?page=gallery" target="_blank">View Gallery</a>
+      </div>
+
+      <h2>Cork Temple</h2>
+      <p class="subtitle">Media Upload Portal</p>
+      
+      <form id="uploadForm">
+        <label for="devoteeName">Your Name:*</label>
+        <input type="text" id="devoteeName" name="devoteeName" placeholder="Enter your full name" required>
+
+        <label for="devoteeEmail">Email Address:*</label>
+        <input type="email" id="devoteeEmail" name="devoteeEmail" placeholder="e.g. devotee@gmail.com" required>
+
+        <label for="devoteePhone">Phone Number:*</label>
+        <input 
+          type="tel" 
+          id="devoteePhone" 
+          name="devoteePhone" 
+          placeholder="e.g. 087 123 4567 or +353 87 123 4567" 
+          pattern="^\+?[0-9\s\-()]{7,20}$" 
+          title="Please enter a valid phone number (e.g. 0871234567 or +353 87 123 4567)" 
+          required
+        >
+
+        <label for="yearSelect">Select Year:*</label>
+        <select id="yearSelect" name="yearSelect" onchange="onYearChange()" required>
+          <option value="">-- Loading Folders from Drive... --</option>
+        </select>
+
+        <label for="festivalSelect">Select Festival / Category:*</label>
+        <select id="festivalSelect" name="festivalSelect" required disabled>
+          <option value="">-- Select Year First --</option>
+        </select>
+
+        <label for="myFiles">Select Photos or Videos:*</label>
+        <input type="file" id="myFiles" name="myFiles" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,video/mp4,video/quicktime,video/webm" multiple required>
+        <p class="file-hint">Allowed: JPG, PNG, WEBP, HEIC, MP4, MOV (Max 25 MB per file)</p>
+
+        <button type="button" id="submitBtn" onclick="submitData()">Upload Media</button>
+      </form>
+      <div id="status"></div>
+    </div>
+
+    <script>
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbycngzqSD2AIvaCDqbEKHFi5nRLs7WcFGOJHIqDMdHMON9eiINvP7M7M15pdY0NGymI/exec";
+      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";
+
+      let folderTree = [];
+
+      // 1. Fetch live folders from your Google Drive backend
+      async function fetchLiveFolders() {
+        const yearSelect = document.getElementById('yearSelect');
+        try {
+          const response = await fetch(SCRIPT_URL, {
+            method: "POST",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ token: UPLOAD_TOKEN, action: "getFolders" })
+          });
+          const result = await response.json();
+          if (result.status === "success" && result.data && result.data.length > 0) {
+            folderTree = result.data;
+            populateYears();
+          } else {
+            yearSelect.innerHTML = '<option value="">-- No year folders found --</option>';
+          }
+        } catch (err) {
+          console.error("Folder fetch error:", err);
+          yearSelect.innerHTML = '<option value="">-- Error loading folders --</option>';
+        }
+      }
+
+      fetchLiveFolders();
+
+      // 2. Populate Years dropdown
+      function populateYears() {
+        const yearSelect = document.getElementById('yearSelect');
+        yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+        
+        if (!folderTree || folderTree.length === 0) {
+          yearSelect.innerHTML = '<option value="">-- No year folders found --</option>';
+          return;
+        }
+
+        folderTree.forEach((yearObj, index) => {
+          const opt = document.createElement('option');
+          opt.value = index;
+          opt.textContent = yearObj.name;
+          yearSelect.appendChild(opt);
+        });
+      }
+
+      // 3. Populate Festivals based on selected Year
+      function onYearChange() {
+        const yearIndex = document.getElementById('yearSelect').value;
+        const festivalSelect = document.getElementById('festivalSelect');
+
+        festivalSelect.innerHTML = '<option value="">-- Select Festival / Category --</option>';
+
+        if (yearIndex !== "") {
+          const festivals = folderTree[yearIndex].festivals;
+          if (festivals && festivals.length > 0) {
+            festivals.forEach(fest => {
+              const opt = document.createElement('option');
+              opt.value = fest.id;
+              opt.textContent = fest.name;
+              festivalSelect.appendChild(opt);
+            });
+          } else {
+            const yearOpt = document.createElement('option');
+            yearOpt.value = folderTree[yearIndex].id;
+            yearOpt.textContent = "General Year Upload (" + folderTree[yearIndex].name + ")";
+            festivalSelect.appendChild(yearOpt);
+          }
+          festivalSelect.disabled = false;
+        } else {
+          festivalSelect.disabled = true;
+        }
+      }
+
+      function fileToBase64(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result.split(',')[1]);
+          reader.onerror = error => reject(error);
+          reader.readAsDataURL(file);
+        });
+      }
+
+      // 4. Send upload payload via background POST
+      async function uploadSingleFile(payload) {
+        payload.token = UPLOAD_TOKEN;
+        const response = await fetch(SCRIPT_URL, {
+          method: "POST",
+          headers: { "Content-Type": "text/plain;charset=utf-8" },
+          body: JSON.stringify(payload)
+        });
+        const resJson = await response.json();
+        return resJson.status === "success" ? "Success" : (resJson.message || "Failed");
+      }
+
+      // 5. Handle form submission
+      async function submitData() {
+        const form = document.getElementById('uploadForm');
+        if (!form.checkValidity()) {
+          alert("Please fill out all required fields with a valid email and phone number (e.g., 087 123 4567).");
+          return;
+        }
+
+        const phoneVal = document.getElementById('devoteePhone').value.trim();
+        const phoneRegex = /^\+?[0-9\s\-()]{7,20}$/;
+        if (!phoneRegex.test(phoneVal)) {
+          alert("Please enter a valid phone number (at least 7 to 15 digits).");
+          return;
+        }
+
+        const fileInput = document.getElementById('myFiles');
+        const files = fileInput.files;
+        if (!files.length) {
+          alert("Please select at least one file to upload.");
+          return;
+        }
+
+        const MAX_FILE_SIZE = 25 * 1024 * 1024;
+        for (let i = 0; i < files.length; i++) {
+          if (files[i].size > MAX_FILE_SIZE) {
+            alert(`File "${files[i].name}" exceeds the 25 MB limit. Please choose a smaller file.`);
+            return;
+          }
+        }
+
+        const btn = document.getElementById('submitBtn');
+        const status = document.getElementById('status');
+        btn.disabled = true;
+
+        const devoteeName = document.getElementById('devoteeName').value.trim();
+        const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
+        const folderId = document.getElementById('festivalSelect').value;
+
+        let successCount = 0;
+        let errors = [];
+
+        for (let i = 0; i < files.length; i++) {
+          const file = files[i];
+          status.style.color = "#000";
+          status.textContent = `Uploading ${i + 1} of ${files.length} (${file.name})...`;
+
+          try {
+            const base64Data = await fileToBase64(file);
+            const payload = {
+              fileName: file.name,
+              mimeType: file.type || "application/octet-stream",
+              base64: base64Data,
+              folderId: folderId,
+              devoteeName: devoteeName,
+              devoteeEmail: devoteeEmail,
+              devoteePhone: phoneVal
+            };
+
+            const response = await uploadSingleFile(payload);
+            if (response === "Success") {
+              successCount++;
+            } else {
+              errors.push(`${file.name}: ${response}`);
+            }
+          } catch (err) {
+            errors.push(`${file.name}: ${err.message || "Failed"}`);
+          }
+        }
+
+        if (successCount === files.length) {
+          status.style.color = "green";
+          status.textContent = `Success! All ${successCount} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
+          form.reset();
+          document.getElementById('festivalSelect').disabled = true;
+          populateYears();
+        } else {
+          status.style.color = "red";
+          status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
+        }
+
+        btn.disabled = false;
+      }
+    </script>
+  </body>
+</html>
