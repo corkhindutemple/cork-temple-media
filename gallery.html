@@ -32,8 +32,8 @@
   <body>
     <div class="container">
       <div class="nav-links">
-        <a href="index.html?v=3">Upload Media</a>
-        <a href="javascript:void(0)" class="active">View Gallery</a>
+        <a href="index.html">Upload Media</a>
+        <a href="gallery.html" class="active">View Gallery</a>
       </div>
 
       <h2>Cork Temple</h2>
@@ -48,12 +48,12 @@
         </select>
       </div>
 
-      <div id="statusMessage">Loading gallery media...</div>
+      <div id="statusMessage">Loading approved photos & videos...</div>
       <div class="gallery-grid" id="galleryGrid"></div>
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 13]
       let allMedia = [];
 
       async function loadGallery() {
@@ -75,7 +75,7 @@
           }
         } catch (err) {
           console.error("Gallery fetch error:", err);
-          status.textContent = "Error loading gallery. Please try again later.";
+          status.textContent = "Error connecting to gallery. Please try again later.";
         }
       }
 
