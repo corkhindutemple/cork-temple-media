@@ -54,38 +54,31 @@
 
     <script>
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
-      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 7]
       let allMedia = [];
 
-      async function loadGallery() {
+      window.handleGalleryData = function(result) {
         const status = document.getElementById("statusMessage");
-        try {
-          const response = await fetch(SCRIPT_URL, {
-            method: "POST",
-            headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({
-              token: UPLOAD_TOKEN,
-              action: "getGallery"
-            })
-          });
-
-          const result = await response.json();
-          if (result.status === "success" && Array.isArray(result.data)) {
-            allMedia = result.data;
-            if (allMedia.length === 0) {
-              status.textContent = "No approved photos or videos yet.";
-            } else {
-              status.style.display = "none";
-              setupFilterDropdowns();
-              renderMedia(allMedia);
-            }
+        if (result && result.status === "success" && Array.isArray(result.data)) {
+          allMedia = result.data;
+          if (allMedia.length === 0) {
+            status.textContent = "No approved photos or videos yet.";
           } else {
-            status.textContent = "No approved items found.";
+            status.style.display = "none";
+            setupFilterDropdowns();
+            renderMedia(allMedia);
           }
-        } catch (err) {
-          console.error("Gallery fetch error:", err);
-          status.textContent = "Error loading gallery. Please check connection.";
+        } else {
+          status.textContent = "No approved items found.";
         }
+      };
+
+      function fetchGallery() {
+        const script = document.createElement("script");
+        script.src = SCRIPT_URL + "?action=getGallery&callback=handleGalleryData";
+        script.onerror = function() {
+          document.getElementById("statusMessage").textContent = "Error loading gallery. Please check connection.";
+        };
+        document.body.appendChild(script);
       }
 
       function setupFilterDropdowns() {
@@ -174,7 +167,7 @@
         });
       }
 
-      loadGallery();
+      fetchGallery();
     </script>
   </body>
 </html>
