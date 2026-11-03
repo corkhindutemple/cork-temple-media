@@ -8,7 +8,7 @@
       .container { background: white; padding: 25px; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
       .nav-links { display: flex; justify-content: center; gap: 15px; margin-bottom: 20px; font-size: 14px; }
       .nav-links a { color: #8b0000; text-decoration: none; font-weight: bold; padding: 6px 14px; border-radius: 4px; border: 1px solid #8b0000; }
-      .nav-links a.active { background-color: #8b0000; color: white; }
+      .nav-links a.active { background-color: #8b0000; color: white; cursor: default; }
       h2 { color: #8b0000; text-align: center; margin-bottom: 5px; }
       p.subtitle { text-align: center; color: #555; font-size: 14px; margin-bottom: 20px; }
       
@@ -32,8 +32,8 @@
   <body>
     <div class="container">
       <div class="nav-links">
-        <a href="index.html">Upload Media</a>
-        <a href="gallery.html" class="active">View Gallery</a>
+        <a href="index.html?v=2">Upload Media</a>
+        <a href="javascript:void(0)" class="active">View Gallery</a>
       </div>
 
       <h2>Cork Temple</h2>
@@ -53,7 +53,7 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 7]
       let allMedia = [];
 
       async function loadGallery() {
