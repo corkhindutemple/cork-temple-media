@@ -48,12 +48,8 @@
         >
 
         <label for="yearSelect">Select Year:*</label>
-        <select id="yearSelect" name="yearSelect" onchange="filterFestivals()" required>
+        <select id="yearSelect" name="yearSelect" onchange="onYearChange(this.value)" required>
           <option value="">-- Select Year --</option>
-          <option value="2026">2026</option>
-          <option value="2025">2025</option>
-          <option value="2024">2024</option>
-          <option value="2023">2023</option>
         </select>
 
         <label for="festivalSelect">Select Festival / Category:*</label>
@@ -71,106 +67,97 @@
     </div>
 
     <script>
-      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";[cite: 14]
-      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";[cite: 14]
-      const ROOT_ID = "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3";[cite: 14]
+      const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
+      const UPLOAD_TOKEN = "CorkTempleSecureToken2026";
 
-      // Static fallback database
-      const FESTIVALS_BY_YEAR = {
-        "2026": [
-          "Maha Shivaratri 2026",
-          "Holi 2026",
-          "Ugadi / Gudi Padwa 2026",
-          "General / Regular Darshan",
-          "Others"
-        ],
-        "2025": [
-          "Diwali 2025",
-          "Navratri 2025",
-          "Ganesh Chaturthi 2025",
-          "General 2025",
-          "Others"
-        ],
-        "2024": [
-          "Diwali 2024",
-          "Navratri 2024",
-          "General 2024",
-          "Others"
-        ],
-        "2023": [
-          "Diwali 2023",
-          "General 2023",
-          "Others"
-        ]
-      };
+      // Standalone folder structure matching Google Drive exactly
+      const folderTree = [
+        {
+          name: "2026",
+          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          festivals: [
+            { name: "Maha Shivaratri 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Holi 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Ugadi / Gudi Padwa 2026", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "General / Regular Darshan", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Others", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+          ]
+        },
+        {
+          name: "2025",
+          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          festivals: [
+            { name: "Diwali 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Navratri 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Ganesh Chaturthi 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "General 2025", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Others", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+          ]
+        },
+        {
+          name: "2024",
+          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          festivals: [
+            { name: "Diwali 2024", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Navratri 2024", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "General 2024", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Others", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+          ]
+        },
+        {
+          name: "2023",
+          id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3",
+          festivals: [
+            { name: "Diwali 2023", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "General 2023", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" },
+            { name: "Others", id: "1L4EhpDY7HwWC59qCB2bB2bn1ULtUfYX3" }
+          ]
+        }
+      ];
 
-      // Stores live folder IDs when fetched
-      let driveFolderMapping = {};
+      // Populate year dropdown directly on load
+      function initYears() {
+        const yearSelect = document.getElementById('yearSelect');
+        yearSelect.innerHTML = '<option value="">-- Select Year --</option>';
+        for (let i = 0; i < folderTree.length; i++) {
+          const opt = document.createElement('option');
+          opt.value = i;
+          opt.textContent = folderTree[i].name;
+          yearSelect.appendChild(opt);
+        }
+      }
 
-      function filterFestivals() {
-        const yearSelect = document.getElementById("yearSelect");
-        const festSelect = document.getElementById("festivalSelect");
-        const selectedYear = yearSelect.value;
+      initYears();
 
-        festSelect.innerHTML = "";
+      // Trigger festival populate on selection
+      function onYearChange(selectedIndex) {
+        const festSelect = document.getElementById('festivalSelect');
+        festSelect.innerHTML = '';
 
-        if (!selectedYear) {
+        if (selectedIndex === "") {
           festSelect.disabled = true;
-          const defOpt = document.createElement("option");
-          defOpt.value = "";
-          defOpt.textContent = "-- Select Year First --";
-          festSelect.appendChild(defOpt);
+          const opt = document.createElement('option');
+          opt.value = "";
+          opt.textContent = "-- Select Year First --";
+          festSelect.appendChild(opt);
           return;
         }
 
-        // Add prompt
-        const promptOpt = document.createElement("option");
+        const promptOpt = document.createElement('option');
         promptOpt.value = "";
         promptOpt.textContent = "-- Select Festival / Category --";
         festSelect.appendChild(promptOpt);
 
-        // Check if we have live Drive items for this year
-        if (driveFolderMapping[selectedYear] && driveFolderMapping[selectedYear].length > 0) {
-          driveFolderMapping[selectedYear].forEach(fest => {
-            const opt = document.createElement("option");
-            opt.value = fest.id;
-            opt.textContent = fest.name;
-            festSelect.appendChild(opt);
-          });
-        } else if (FESTIVALS_BY_YEAR[selectedYear]) {
-          // Fall back to predefined list
-          FESTIVALS_BY_YEAR[selectedYear].forEach(name => {
-            const opt = document.createElement("option");
-            opt.value = ROOT_ID;
-            opt.textContent = name;
-            festSelect.appendChild(opt);
-          });
+        const festivals = folderTree[selectedIndex].festivals;
+        for (let j = 0; j < festivals.length; j++) {
+          const opt = document.createElement('option');
+          opt.value = festivals[j].id;
+          opt.textContent = festivals[j].name;
+          festSelect.appendChild(opt);
         }
 
         festSelect.disabled = false;
       }
-
-      // JSONP to populate exact Drive IDs without breaking dropdown state
-      window.handleFolderData = function(res) {
-        if (res && res.status === "success" && Array.isArray(res.data)) {
-          res.data.forEach(yearFolder => {
-            if (yearFolder.festivals && yearFolder.festivals.length > 0) {
-              driveFolderMapping[yearFolder.name] = yearFolder.festivals;
-            } else {
-              driveFolderMapping[yearFolder.name] = [{ name: "General " + yearFolder.name, id: yearFolder.id }];
-            }
-          });
-          // Refresh list if user had already chosen a year
-          const currentYear = document.getElementById("yearSelect").value;
-          if (currentYear) {
-            filterFestivals();
-          }
-        }
-      };
-
-      const tag = document.createElement("script");
-      tag.src = SCRIPT_URL + "?action=getFolders&callback=handleFolderData";
-      document.body.appendChild(tag);
 
       function fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -274,6 +261,7 @@
           form.reset();
           festSelect.disabled = true;
           festSelect.innerHTML = '<option value="">-- Select Year First --</option>';
+          initYears();
         } else {
           status.style.color = "red";
           status.innerHTML = `Uploaded ${successCount} of ${files.length} items.<br>` + errors.join("<br>");
