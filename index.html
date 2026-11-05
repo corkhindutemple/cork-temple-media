@@ -17,6 +17,7 @@
       button:disabled { background-color: #cccccc; cursor: not-allowed; }
       #status { margin-top: 15px; text-align: center; font-weight: bold; font-size: 14px; line-height: 1.4; }
       .file-hint { font-size: 12px; color: #666; margin-top: 4px; }
+      .screen-notice { display: none; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin-top: 12px; text-align: center; }
     </style>
   </head>
   <body>
@@ -63,6 +64,7 @@
 
         <button type="button" id="submitBtn" onclick="submitData()">Upload Media</button>
       </form>
+      <div id="screenNotice" class="screen-notice">⚠️ Please keep your phone unlocked and this tab open until all files finish uploading.</div>
       <div id="status"></div>
     </div>
 
@@ -70,6 +72,7 @@
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
       const UPLOAD_SECRET = "CorkTempleSecureToken2026";
       let folderTree = [];
+      let wakeLock = null;
 
       window.handleFolderData = function(result) {
         if (result && result.status === "success" && Array.isArray(result.data)) {
@@ -130,6 +133,25 @@
           festivalSelect.disabled = false;
         } else {
           festivalSelect.disabled = true;
+        }
+      }
+
+      async function requestWakeLock() {
+        if ('wakeLock' in navigator) {
+          try {
+            wakeLock = await navigator.wakeLock.request('screen');
+          } catch (err) {
+            console.log('WakeLock error:', err);
+          }
+        }
+      }
+
+      function releaseWakeLock() {
+        if (wakeLock !== null) {
+          try {
+            wakeLock.release();
+            wakeLock = null;
+          } catch (e) {}
         }
       }
 
@@ -203,7 +225,18 @@
 
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('status');
+        const notice = document.getElementById('screenNotice');
+
         btn.disabled = true;
+        notice.style.display = 'block';
+
+        // Keep screen awake while uploading
+        await requestWakeLock();
+
+        // Warn if user attempts to leave/refresh
+        window.onbeforeunload = function() {
+          return "Upload in progress. Are you sure you want to leave?";
+        };
 
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
@@ -246,7 +279,11 @@
           }
         }
 
-        // Send a single batch email if at least one file was uploaded successfully
+        // Clean up locks and warnings
+        window.onbeforeunload = null;
+        releaseWakeLock();
+        notice.style.display = 'none';
+
         if (successFiles.length > 0) {
           status.textContent = "Finalizing upload and notifying temple team...";
           await sendBatchEmail(devoteeName, devoteeEmail, phoneVal, selectedFestivalName, successFiles);
