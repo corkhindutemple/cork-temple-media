@@ -20,10 +20,9 @@
       .media-thumb-box { width: 100%; height: 180px; background: #000; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
       .media-thumb-box img { width: 100%; height: 100%; object-fit: cover; }
       .media-thumb-box video { width: 100%; height: 100%; object-fit: cover; }
-      .media-info { padding: 10px; font-size: 13px; }
-      .media-info .tag { display: inline-block; background: #8b0000; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; margin-bottom: 6px; }
-      .media-info .title { font-weight: bold; color: #333; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-      .view-btn { display: block; text-align: center; padding: 6px; background: #eee; color: #333; text-decoration: none; font-size: 12px; border-radius: 4px; font-weight: bold; margin-top: 6px; }
+      .media-info { padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+      .media-info .tag { display: inline-block; background: #8b0000; color: white; padding: 3px 8px; border-radius: 12px; font-size: 11px; align-self: flex-start; }
+      .view-btn { display: block; text-align: center; padding: 6px; background: #eee; color: #333; text-decoration: none; font-size: 12px; border-radius: 4px; font-weight: bold; margin-top: 4px; }
       .view-btn:hover { background: #ddd; }
       
       #statusMessage { text-align: center; padding: 40px 20px; color: #666; font-size: 15px; }
@@ -150,7 +149,7 @@
           } else {
             mediaPreview = `
               <div class="media-thumb-box">
-                <img src="${item.thumbnailUrl}" alt="${item.fileName}" loading="lazy" onerror="this.src='${item.fullUrl}'">
+                <img src="${item.thumbnailUrl}" alt="Cork Temple Media" loading="lazy" onerror="this.src='${item.fullUrl}'">
               </div>
             `;
           }
@@ -159,7 +158,6 @@
             ${mediaPreview}
             <div class="media-info">
               <span class="tag">${item.festival || 'Temple'} (${item.year})</span>
-              <div class="title" title="${item.fileName}">${item.fileName}</div>
               <a href="${item.fullUrl}" target="_blank" class="view-btn">View Original File</a>
             </div>
           `;
