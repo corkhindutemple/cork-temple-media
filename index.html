@@ -66,7 +66,7 @@
       <div id="status"></div>
     </div>
 
-    <!-- Hidden audio element keeping the thread active without crashing system power timeouts -->
+    <!-- Hidden audio element keeping network active -->
     <audio id="bgKeepAlive" loop preload="auto" style="display:none;">
       <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
     </audio>
@@ -184,7 +184,6 @@
         });
       }
 
-      // Upload without keepalive: true (which causes "Load failed" on large files)
       async function uploadSingleFileWithRetry(payload, maxRetries = 2) {
         payload.token = UPLOAD_SECRET;
         let attempt = 0;
@@ -263,6 +262,8 @@
 
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
+        const yearDropdown = document.getElementById('yearSelect');
+        const selectedYearName = yearDropdown.options[yearDropdown.selectedIndex].text;
         const festDropdown = document.getElementById('festivalSelect');
         const folderId = festDropdown.value;
         const selectedFestivalName = festDropdown.options[festDropdown.selectedIndex].text;
@@ -282,6 +283,7 @@
               mimeType: file.type || "application/octet-stream",
               base64: base64Data,
               folderId: folderId,
+              yearName: selectedYearName,
               devoteeName: devoteeName,
               devoteeEmail: devoteeEmail,
               devoteePhone: phoneVal
