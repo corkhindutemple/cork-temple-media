@@ -66,10 +66,10 @@
       <div id="status"></div>
     </div>
 
-    <!-- Hidden tiny video element to keep iOS Safari awake when wakeLock API is unsupported -->
-    <video id="iosWakeVideo" playsinline muted loop style="position: absolute; width: 1px; height: 1px; opacity: 0.01; pointer-events: none;">
-      <source src="data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wNDJpc29tYXZjMQAAABBtb292AAAAbG12aGQAAAAA5x/aGucf2hoAAAUAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAABbWRhdAAAAAA=" type="video/mp4">
-    </video>
+    <!-- Hidden audio element keeping the thread active without crashing system power timeouts -->
+    <audio id="bgKeepAlive" loop preload="auto" style="display:none;">
+      <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQAAAAA=" type="audio/wav">
+    </audio>
 
     <script>
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
@@ -140,28 +140,23 @@
         }
       }
 
-      // Keep screen actively awake
-      async function activateWakeLock() {
+      async function requestScreenLock() {
         try {
           if ('wakeLock' in navigator) {
             wakeLockSentinel = await navigator.wakeLock.request('screen');
             wakeLockSentinel.addEventListener('release', () => {
-              if (isUploading) {
-                // If system automatically released lock, re-acquire when possible
-                activateWakeLock();
-              }
+              if (isUploading) requestScreenLock();
             });
           }
         } catch (e) {}
 
-        // Fallback for iOS Safari
         try {
-          const v = document.getElementById('iosWakeVideo');
-          if (v && v.paused) v.play().catch(() => {});
+          const a = document.getElementById('bgKeepAlive');
+          if (a && a.paused) a.play().catch(() => {});
         } catch (e) {}
       }
 
-      function deactivateWakeLock() {
+      function releaseScreenLock() {
         if (wakeLockSentinel !== null) {
           try {
             wakeLockSentinel.release();
@@ -169,15 +164,14 @@
           wakeLockSentinel = null;
         }
         try {
-          const v = document.getElementById('iosWakeVideo');
-          if (v && !v.paused) v.pause();
+          const a = document.getElementById('bgKeepAlive');
+          if (a && !a.paused) a.pause();
         } catch (e) {}
       }
 
-      // Re-engage if user locks and unlocks their phone
       document.addEventListener('visibilitychange', () => {
         if (document.visibilityState === 'visible' && isUploading) {
-          activateWakeLock();
+          requestScreenLock();
         }
       });
 
@@ -190,7 +184,7 @@
         });
       }
 
-      // Upload single file with automatic retry if phone was locked mid-flight
+      // Upload without keepalive: true (which causes "Load failed" on large files)
       async function uploadSingleFileWithRetry(payload, maxRetries = 2) {
         payload.token = UPLOAD_SECRET;
         let attempt = 0;
@@ -200,14 +194,13 @@
             const res = await fetch(SCRIPT_URL, {
               method: "POST",
               headers: { "Content-Type": "text/plain;charset=utf-8" },
-              body: JSON.stringify(payload),
-              keepalive: true
+              body: JSON.stringify(payload)
             });
             return await res.json();
           } catch (err) {
             attempt++;
             if (attempt > maxRetries) throw err;
-            await new Promise(r => setTimeout(r, 1500)); // Brief pause before retry
+            await new Promise(r => setTimeout(r, 1200));
           }
         }
       }
@@ -225,8 +218,7 @@
               devoteePhone: devoteePhone,
               folderName: folderName,
               uploadedFiles: filesList
-            }),
-            keepalive: true
+            })
           });
         } catch (e) {
           console.error("Batch email alert error:", e);
@@ -267,7 +259,7 @@
 
         btn.disabled = true;
         isUploading = true;
-        await activateWakeLock();
+        await requestScreenLock();
 
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
@@ -311,7 +303,7 @@
         }
 
         isUploading = false;
-        deactivateWakeLock();
+        releaseScreenLock();
 
         if (successFiles.length > 0) {
           status.textContent = "Finalizing upload and notifying temple team...";
