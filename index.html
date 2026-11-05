@@ -17,7 +17,6 @@
       button:disabled { background-color: #cccccc; cursor: not-allowed; }
       #status { margin-top: 15px; text-align: center; font-weight: bold; font-size: 14px; line-height: 1.4; }
       .file-hint { font-size: 12px; color: #666; margin-top: 4px; }
-      .screen-notice { display: none; background: #fff3cd; color: #856404; border: 1px solid #ffeeba; padding: 8px 12px; border-radius: 4px; font-size: 12px; margin-top: 12px; text-align: center; }
     </style>
   </head>
   <body>
@@ -64,15 +63,20 @@
 
         <button type="button" id="submitBtn" onclick="submitData()">Upload Media</button>
       </form>
-      <div id="screenNotice" class="screen-notice">⚠️ Uploading original quality files. Please keep your phone unlocked and this tab open.</div>
       <div id="status"></div>
     </div>
+
+    <!-- Hidden tiny video element to keep iOS Safari awake when wakeLock API is unsupported -->
+    <video id="iosWakeVideo" playsinline muted loop style="position: absolute; width: 1px; height: 1px; opacity: 0.01; pointer-events: none;">
+      <source src="data:video/mp4;base64,AAAAHGZ0eXBtcDQyAAAAAG1wNDJpc29tYXZjMQAAABBtb292AAAAbG12aGQAAAAA5x/aGucf2hoAAAUAAAAAAAEAAAEAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAABbWRhdAAAAAA=" type="video/mp4">
+    </video>
 
     <script>
       const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyX9p_7vP1b5Hizl2KiRlE4tOo5XhtX3dGkB_JqbhWJEDlCf00AeXSIR2PZM_y3y6h3/exec";
       const UPLOAD_SECRET = "CorkTempleSecureToken2026";
       let folderTree = [];
-      let wakeLock = null;
+      let wakeLockSentinel = null;
+      let isUploading = false;
 
       window.handleFolderData = function(result) {
         if (result && result.status === "success" && Array.isArray(result.data)) {
@@ -136,22 +140,46 @@
         }
       }
 
-      async function requestWakeLock() {
-        if ('wakeLock' in navigator) {
-          try {
-            wakeLock = await navigator.wakeLock.request('screen');
-          } catch (err) {}
-        }
+      // Keep screen actively awake
+      async function activateWakeLock() {
+        try {
+          if ('wakeLock' in navigator) {
+            wakeLockSentinel = await navigator.wakeLock.request('screen');
+            wakeLockSentinel.addEventListener('release', () => {
+              if (isUploading) {
+                // If system automatically released lock, re-acquire when possible
+                activateWakeLock();
+              }
+            });
+          }
+        } catch (e) {}
+
+        // Fallback for iOS Safari
+        try {
+          const v = document.getElementById('iosWakeVideo');
+          if (v && v.paused) v.play().catch(() => {});
+        } catch (e) {}
       }
 
-      function releaseWakeLock() {
-        if (wakeLock !== null) {
+      function deactivateWakeLock() {
+        if (wakeLockSentinel !== null) {
           try {
-            wakeLock.release();
-            wakeLock = null;
+            wakeLockSentinel.release();
           } catch (e) {}
+          wakeLockSentinel = null;
         }
+        try {
+          const v = document.getElementById('iosWakeVideo');
+          if (v && !v.paused) v.pause();
+        } catch (e) {}
       }
+
+      // Re-engage if user locks and unlocks their phone
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'visible' && isUploading) {
+          activateWakeLock();
+        }
+      });
 
       function fileToBase64(file) {
         return new Promise((resolve, reject) => {
@@ -162,14 +190,26 @@
         });
       }
 
-      async function uploadSingleFile(payload) {
+      // Upload single file with automatic retry if phone was locked mid-flight
+      async function uploadSingleFileWithRetry(payload, maxRetries = 2) {
         payload.token = UPLOAD_SECRET;
-        const res = await fetch(SCRIPT_URL, {
-          method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify(payload)
-        });
-        return await res.json();
+        let attempt = 0;
+        
+        while (attempt <= maxRetries) {
+          try {
+            const res = await fetch(SCRIPT_URL, {
+              method: "POST",
+              headers: { "Content-Type": "text/plain;charset=utf-8" },
+              body: JSON.stringify(payload),
+              keepalive: true
+            });
+            return await res.json();
+          } catch (err) {
+            attempt++;
+            if (attempt > maxRetries) throw err;
+            await new Promise(r => setTimeout(r, 1500)); // Brief pause before retry
+          }
+        }
       }
 
       async function sendBatchEmail(devoteeName, devoteeEmail, devoteePhone, folderName, filesList) {
@@ -185,9 +225,12 @@
               devoteePhone: devoteePhone,
               folderName: folderName,
               uploadedFiles: filesList
-            })
+            }),
+            keepalive: true
           });
-        } catch (e) {}
+        } catch (e) {
+          console.error("Batch email alert error:", e);
+        }
       }
 
       async function submitData() {
@@ -221,13 +264,10 @@
 
         const btn = document.getElementById('submitBtn');
         const status = document.getElementById('status');
-        const notice = document.getElementById('screenNotice');
 
         btn.disabled = true;
-        notice.style.display = 'block';
-
-        await requestWakeLock();
-        window.onbeforeunload = () => "Upload in progress. Are you sure you want to leave?";
+        isUploading = true;
+        await activateWakeLock();
 
         const devoteeName = document.getElementById('devoteeName').value.trim();
         const devoteeEmail = document.getElementById('devoteeEmail').value.trim();
@@ -255,7 +295,7 @@
               devoteePhone: phoneVal
             };
 
-            const response = await uploadSingleFile(payload);
+            const response = await uploadSingleFileWithRetry(payload);
             if (response.status === "success" && response.result && response.result.status === "Success") {
               successFiles.push({
                 name: response.result.fileName || file.name,
@@ -270,9 +310,8 @@
           }
         }
 
-        window.onbeforeunload = null;
-        releaseWakeLock();
-        notice.style.display = 'none';
+        isUploading = false;
+        deactivateWakeLock();
 
         if (successFiles.length > 0) {
           status.textContent = "Finalizing upload and notifying temple team...";
@@ -281,7 +320,7 @@
 
         if (successFiles.length === files.length) {
           status.style.color = "green";
-          status.textContent = `Success! All ${successFiles.length} item(s) uploaded. They will appear in the gallery once reviewed by the temple team. Dhanyawad!`;
+          status.textContent = `Success! All ${successFiles.length} item(s) uploaded. Dhanyawad!`;
           form.reset();
           document.getElementById('festivalSelect').disabled = true;
           populateYears();
