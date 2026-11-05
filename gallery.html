@@ -17,10 +17,27 @@
       
       .gallery-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 16px; margin-top: 15px; }
       .media-card { background: #fafafa; border: 1px solid #eaeaea; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; }
-      .media-thumb-box { width: 100%; height: 190px; background: #111; display: flex; align-items: center; justify-content: center; overflow: hidden; position: relative; }
-      .media-thumb-box img { width: 100%; height: 100%; object-fit: cover; display: block; transition: transform 0.2s; }
-      .media-thumb-box img:hover { transform: scale(1.03); }
-      .media-thumb-box video { width: 100%; height: 100%; object-fit: cover; }
+      
+      /* Changed to dark neutral background with contain so full image is visible */
+      .media-thumb-box { 
+        width: 100%; 
+        height: 200px; 
+        background: #1a1a1a; 
+        display: flex; 
+        align-items: center; 
+        justify-content: center; 
+        overflow: hidden; 
+        position: relative; 
+      }
+      .media-thumb-box img { 
+        width: 100%; 
+        height: 100%; 
+        object-fit: contain; 
+        display: block; 
+        transition: transform 0.2s; 
+      }
+      .media-thumb-box img:hover { transform: scale(1.02); }
+      .media-thumb-box video { width: 100%; height: 100%; object-fit: contain; }
       .video-indicator { position: absolute; background: rgba(0,0,0,0.7); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 11px; }
       
       .media-info { padding: 10px; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
@@ -168,8 +185,8 @@
               </div>
             `;
           } else {
-            // High-speed CDN thumbnail (w500) with fallback to full Drive link
-            const fastThumb = `https://lh3.googleusercontent.com/d/${item.id}=w500-h500-c`;
+            // Uses =s500 (scales proportionally without forced crop)
+            const fastThumb = `https://lh3.googleusercontent.com/d/${item.id}=s500`;
             mediaPreview = `
               <div class="media-thumb-box">
                 <img 
